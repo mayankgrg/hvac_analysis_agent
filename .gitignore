@@ -1,0 +1,40 @@
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.venv/
+venv/
+backend/.venv/
+
+# Node
+node_modules/
+frontend/node_modules/
+.next/
+frontend/.next/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Build / temp
+coverage/
+dist/
+build/
+*.log
+
+# Data artifacts
+backend/hvac.db
+backend/email_log.jsonl
+analysis/*.html
+analysis/*.csv
+
+# IDE
+.vscode/
+.idea/
