@@ -1,13 +1,32 @@
 "use client";
 
-import { useChat } from "ai/react";
+import { useState } from "react";
+import { backendBase } from "@/lib/api";
 import { granolaInstruction } from "@/lib/granola";
 
 export function ChatPanel({ projectId }: { projectId: string }) {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: "/api/chat",
-    body: { projectId }
-  });
+  const [q, setQ] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function ask() {
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch(`${backendBase}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ project_id: projectId, message: `[${granolaInstruction.name}] ${q}` })
+      });
+      const data = await res.json();
+      setAnswer(data.answer ?? "No response");
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : "Unknown chat error");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="card" style={{ marginTop: 12 }}>
@@ -16,46 +35,19 @@ export function ChatPanel({ projectId }: { projectId: string }) {
         Granola prompt profile active: {granolaInstruction.name}
       </div>
 
-      <div
-        style={{
-          maxHeight: 240,
-          overflowY: "auto",
-          border: "1px solid var(--line)",
-          borderRadius: 10,
-          padding: 8,
-          marginBottom: 8
-        }}
-      >
-        {messages.length === 0 ? (
-          <p style={{ margin: 0, opacity: 0.7 }}>Ask about risk, root cause, what-if margin, or send-email actions.</p>
-        ) : null}
-        {messages.map((m) => (
-          <div key={m.id} style={{ marginBottom: 8 }}>
-            <strong style={{ textTransform: "capitalize" }}>{m.role}:</strong>{" "}
-            <span>{m.content}</span>
-          </div>
-        ))}
-      </div>
+      <textarea
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        rows={3}
+        style={{ width: "100%", marginBottom: 8 }}
+        placeholder="Example: What are top recovery actions and what is the $ impact?"
+      />
+      <button className="btn btn-primary" onClick={ask} disabled={loading}>
+        {loading ? "Thinking..." : "Ask Agent"}
+      </button>
 
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          handleSubmit(e);
-        }}
-      >
-        <textarea
-          value={input}
-          onChange={handleInputChange}
-          rows={3}
-          style={{ width: "100%", marginBottom: 8 }}
-          placeholder="Example: What are the top 3 recovery actions and draft an email to the PM?"
-        />
-        <button className="btn btn-primary" type="submit" disabled={isLoading}>
-          {isLoading ? "Thinking..." : "Ask Agent"}
-        </button>
-      </form>
-
-      {error ? <p className="bad" style={{ marginBottom: 0 }}>Chat error: {error.message}</p> : null}
+      {error ? <p className="bad" style={{ marginBottom: 0 }}>Chat error: {error}</p> : null}
+      {answer ? <p style={{ marginBottom: 0 }}>{answer}</p> : null}
     </div>
   );
 }
